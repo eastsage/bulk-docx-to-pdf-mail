@@ -1,28 +1,50 @@
 name: build-windows-exe
-on: [push, workflow_dispatch]
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+    paths:
+      - "src/**"
+      - ".github/workflows/build-windows.yml"
+      - "windows/**"
+      - "data/**"
+      - "README.md"
+
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install deps
+
+      - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r src/requirements.txt
           pip install pyinstaller
-      - name: Build exe
+
+      - name: Build exe with PyInstaller
         run: |
           pyinstaller --onefile --name bulk_mailer src/main.py
+
+      - name: Copy runtime assets
+        shell: bash
+        run: |
+          mkdir -p upload/data
+          mkdir -p upload/windows
+          cp -R data/* upload/data/ || true
+          cp -R windows/* upload/windows/ || true
+          cp -R dist/bulk_mailer.exe upload/
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: bulk_mailer_windows
-          path: |
-            dist/bulk_mailer.exe
-            data/**
-            windows/**
-            .github/workflows/build-windows.yml
-            README.md
+          path: upload/**
+          if-no-files-found: error
