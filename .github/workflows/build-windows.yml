@@ -1,0 +1,28 @@
+name: build-windows-exe
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          pip install -r src/requirements.txt
+          pip install pyinstaller
+      - name: Build exe
+        run: |
+          pyinstaller --onefile --name bulk_mailer src/main.py
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bulk_mailer_windows
+          path: |
+            dist/bulk_mailer.exe
+            data/**
+            windows/**
+            .github/workflows/build-windows.yml
+            README.md
